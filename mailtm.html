@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temp Mail JSON Output</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        pre {
+            background-color: #f4f4f4;
+            border: 1px solid #ccc;
+            padding: 10px;
+            white-space: pre-wrap; /* Giữ khoảng trắng và dòng mới */
+            word-wrap: break-word; /* Ngắt dòng nếu quá dài */
+        }
+    </style>
+</head>
+<body>
+    <pre id="output">Loading...</pre>
+
+    <script>
+        // Định nghĩa trước biến password
+        const password = 'P@ssw0rd!';
+
+        // Tạo email tạm thời
+        fetch('https://api.mail.tm/domains')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const domain = data['hydra:member'][0].domain;
+                const email = `user${Math.floor(Math.random() * 10000)}@${domain}`;
+
+                return fetch('https://api.mail.tm/accounts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        address: email,
+                        password: password
+                    })
+                });
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(accountData => {
+                // Lấy token
+                return fetch('https://api.mail.tm/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        address: accountData.address,
+                        password: password
+                    })
+                }).then(response => response.json())
+                  .then(tokenData => {
+                      // Tạo đối tượng JSON và hiển thị
+                      const result = {
+                          "Email": accountData.address,
+                          "Password": password,
+                          "Token": tokenData.token
+                      };
+                      // Hiển thị JSON trong thẻ <pre>
+                      document.getElementById('output').textContent = JSON.stringify(result, null, 2);
+                  });
+            })
+            .catch(error => {
+                document.getElementById('output').textContent = `{"Error": "${error.message}"}`;
+                console.error('Error:', error);
+            });
+    </script>
+</body>
+</html>
